@@ -10,25 +10,28 @@ const Bootcamp = require('../models/Bootcamp');
 //@route  GET /api/v1/bootcamps/:bootcampId/courses
 //@access  public
 exports.getCourses = asyncHandler(async (req, res, next) => {
-  let query;
   // if bootcampId is passed then get courses with the reference to that bootcamp
   if (req.params.bootcampId) {
-    query = Course.find({ bootcamp: req.params.bootcampId });
+    // no advancedResults for courses for a specific bootcamp
+    const courses = await Course.find({ bootcamp: req.params.bootcampId });
+
+    return res.status(200).json({
+      success: true,
+      count: courses.length,
+      data: courses,
+    });
   } else {
     // get all courses
     // populate('bootcamp') gives the entire object that was referenced to by mongoose objectId
     // so here we specifiy the fields we need
-    query = Course.find().populate({
+    /*query = Course.find().populate({
       path: 'bootcamp',
       select: 'name description',
-    });
+    });*/
+
+    // advanced Results for all courses
+    res.status(200).json(res.advancedResults);
   }
-  const courses = await query;
-  res.status(200).json({
-    success: true,
-    count: courses.length,
-    data: courses,
-  });
 });
 
 //@desc  single course
