@@ -59,7 +59,7 @@ exports.getCourse = asyncHandler(async (req, res, next) => {
 //@access  Private
 exports.addCourse = asyncHandler(async (req, res, next) => {
   req.body.bootcamp = req.params.bootcampId;
-
+  req.body.user = req.user.id;
   const bootcamp = await Bootcamp.findById(req.params.id).populate({
     path: 'bootcamp',
     select: 'name description',
@@ -68,6 +68,16 @@ exports.addCourse = asyncHandler(async (req, res, next) => {
     return next(
       new ErrorResponse(
         `No Bootcamp with the id of ${req.params.bootcampId}`,
+        404
+      )
+    );
+  }
+
+  // make sure that the bootcamp owner is the user that's logged in or the admin
+  if (bootcamp.user.toString() !== req.user.id && req.user.role !== 'admin') {
+    return next(
+      new ErrorResponse(
+        `User ${req.user.id} is not authorized add a course to bootcamp ${bootcamp._id}`,
         404
       )
     );
@@ -93,6 +103,15 @@ exports.updateCourse = asyncHandler(async (req, res, next) => {
       new ErrorResponse(`No course with the id of ${req.params.id}`, 404)
     );
   }
+  // make sure that the course owner is the user that's logged in or the admin before we update it
+  if (course.user.toString() !== req.user.id && req.user.role !== 'admin') {
+    return next(
+      new ErrorResponse(
+        `User ${req.user.id} is not authorized update a course  ${course._id}`,
+        404
+      )
+    );
+  }
   course = await Course.findByIdAndUpdate(req.params.id, req.body, {
     new: true, // returns the new updated version
     runValidators: true,
@@ -115,6 +134,15 @@ exports.deleteCourse = asyncHandler(async (req, res, next) => {
   if (!course) {
     return next(
       new ErrorResponse(`No course with the id of ${req.params.id}`, 404)
+    );
+  }
+  // make sure that the course owner is the user that's logged in or the admin before we update it
+  if (course.user.toString() !== req.user.id && req.user.role !== 'admin') {
+    return next(
+      new ErrorResponse(
+        `User ${req.user.id} is not authorized delete a course  ${course._id}`,
+        404
+      )
     );
   }
   await course.remove();
